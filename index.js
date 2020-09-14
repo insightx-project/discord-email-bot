@@ -4,17 +4,38 @@ var Imap     = require('imap'),
 var fs       = require('fs');
 
 
-var config = JSON.parse(fs.readFileSync('config.json'));
+/*
+ENV_EMAIL=info@theinsightx.com;
+ENV_PASSWORD=Bk92-Jh91;
+ENV_HOST=imap.gmail.com;
+ENV_PORT=993;
+ENV_TLS=true;
+ENV_DISCORD_TOKEN=NzUyNDc2Mjk0OTM1MjE2MTcw.X1YMKQ.v6WgZONHmfAy9pjT-eXvJY8Lnww
+ENV_DISCORD_CHANNEL=752476565585264670
+ */
+
+
+const env_email = process.env.ENV_EMAIL;
+const env_password = process.env.ENV_PASSWORD
+const env_host = process.env.ENV_HOST
+const env_port = parseInt(process.env.ENV_PORT)
+const env_tls = (process.env.ENV_TLS === "true")
+const env_discord_token = process.env.ENV_DISCORD_TOKEN
+const env_discord_channel = process.env.ENV_DISCORD_CHANNEL
+
 var imap = new Imap({
-    user: config.user,
-    password: config.password,
-    host: config.host,
-    port: config.port,
-    tls: config.tls
+    user: env_email,
+    password: env_password,
+    host: env_host,
+    port: env_port,
+    tls: env_tls,
+    tlsOptions: {
+        rejectUnauthorized: false
+    }
 });
 
 const bot = new Discord.Client();
-bot.login(config.token);
+bot.login(env_discord_token);
 
 function openInbox(callback) {
     imap.openBox('INBOX', true, callback);
@@ -43,9 +64,13 @@ function sendNewest() {
                 });
 
                 stream.once('end', function() {
-                    var channel = bot.channels.get(config.channel); // announcments channel
-                    channel.send(buffer);
-                    console.log(prefix + 'Body [%s] Finished', inspect(info.which));
+
+                    bot.channels.fetch(env_discord_channel).then((channel) => {
+                        channel.send(buffer);
+                        console.log(prefix + 'Body [%s] Finished', inspect(info.which));
+                    })
+
+
                 });
 
             });
